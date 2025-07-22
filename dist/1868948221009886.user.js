@@ -14,13 +14,13 @@
 // @connect     unsplash.com
 // @connect     *
 // @icon        https://www.google.com/s2/favicons?sz=64&domain=garticphone.com
-// @downloadURL http://localhost:8000/userscripts/dist/1868948221009886.user.js
+// @downloadURL https://garticm2.github.io/userscripts/dist/1868948221009886.user.js
 // ==/UserScript==
 
 'use strict';
 
 (function(){
-const SCRIPT_DATA={name:"Reference",version:"1.10",url:"http://localhost:8000/userscripts/dist/1868948221009886.user.js"};
+const SCRIPT_DATA={name:"Reference",version:"1.10",url:"https://garticm2.github.io/userscripts/dist/1868948221009886.user.js"};
 class SearchEngine{static IMAGE_TYPES=new Set("image/jpeg image/png image/gif image/webp image/svg+xml image/bmp".split(" "));constructor(){this.query=this.xhr=null}async download(a,b=!1){return new Promise(async(c,d)=>{try{const e=await this.request({url:a,responseType:"blob",asyncRequest:b});if(e&&this.isAcceptedType(e.type)){const f=new FileReader;f.addEventListener("loadend",g=>{c({base64:f.result,type:e.type})});f.readAsDataURL(e)}else d(null)}catch(e){d(Error("Request error"))}})}isAcceptedType(a){return SearchEngine.IMAGE_TYPES.has(a)}request({url:a,method:b,
 headers:c,data:d,responseType:e="json",asyncRequest:f}){this.xhr&&this.xhr.abort();return new Promise((g,k)=>{const l=GM_xmlhttpRequest({url:a,method:b||"GET",headers:c||{},responseType:"json"===e?"text":e,data:d,anonymous:!0,onload:h=>{let m=h.response||h.responseText;h.response instanceof ArrayBuffer&&("json"===e||"text"===e)&&(m=(new TextDecoder).decode(m));try{switch(e){case "json":m=JSON.parse(m)}200===h.status?g(m):k(h.status)}catch(n){k(n.message)}},onprogress:this.onProgress,ontimeout:k,onerror:k});
 f||(this.xhr=l)})}onProgress(a){document.dispatchEvent(new CustomEvent("_ref_progress",{detail:{percentage:a.lengthComputable?Math.round(a.loaded/a.total*100):-1}}))}buildEndpoint(a,b){b=b.map(c=>c.join("=")).join("&");return`${a}?${b}`}}
