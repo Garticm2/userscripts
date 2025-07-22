@@ -14,6 +14,7 @@
 // @run-at      document-end
 // @connect     cdn.discordapp.com
 // @connect     *
+// @connect     https://github.io
 // @connect     localhost 
 // @icon        https://www.google.com/s2/favicons?sz=64&domain=garticphone.com
 // @downloadURL https://garticm2.github.io/userscripts/dist/8033263611069205.user.js
