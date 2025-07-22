@@ -9,13 +9,13 @@
 // @description 9/18/2021, 8:11:02 PM
 // @run-at      document-start
 // @icon        https://www.google.com/s2/favicons?sz=64&domain=garticphone.com
-// @downloadURL http://localhost:8000/userscripts/dist/7314405506749249.user.js
+// @downloadURL https://garticm2.github.io/userscripts/dist/7314405506749249.user.js
 // ==/UserScript==
 
 'use strict';
 
 (function() {
-    const SCRIPT_DATA = { name: "Core", version: "4.1", url: "http://localhost:8000/userscripts/dist/7314405506749249.user.js" };
+    const SCRIPT_DATA = { name: "Core", version: "4.1", url: "https://garticm2.github.io/userscripts/dist/7314405506749249.user.js" };
     class WebSocket1 extends WebSocket {
         constructor(...a) {
             super(...a);
