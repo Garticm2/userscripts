@@ -82,7 +82,7 @@
     class LocalizationController extends EventTarget {
         static STORAGE = "gp_localization";
         static DEFAULT_LANGUAGE = "en";
-        static PATH = "http://localhost:8000/localization";
+        static PATH = "https://garticm2.github.io/localization";
         constructor() {
             super();
             this.loadHashes().then(a => {
