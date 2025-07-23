@@ -8,7 +8,7 @@
 // @author      -
 // @description Adds Pen Pressure and Copy/Paste functionality.
 // @run-at      document-idle
-// @downloadURL http://localhost:8000/userscripts/dist/tools.user.js
+// @downloadURL https://garticm2.github.io/userscripts/dist/tools.user.js
 // ==/UserScript==
 
 'use strict';
