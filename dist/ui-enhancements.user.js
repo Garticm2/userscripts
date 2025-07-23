@@ -8,7 +8,7 @@
 // @author      -
 // @description Adds custom styles for Layers, Pen Pressure, and Copy/Paste tools.
 // @run-at      document-start
-// @downloadURL http://localhost:8000/userscripts/dist/ui-enhancements.user.js
+// @downloadURL https://garticm2.github.io/userscripts/dist/ui-enhancements.user.js
 // ==/UserScript==
 
 'use strict';
