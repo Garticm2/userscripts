@@ -8,7 +8,7 @@
 // @author      -
 // @description Adds a layer management system to the painter.
 // @run-at      document-idle
-// @downloadURL http://localhost:8000/userscripts/dist/layers.user.js
+// @downloadURL https://garticm2.github.io/userscripts/dist/layers.user.js
 // ==/UserScript==
 
 'use strict';
