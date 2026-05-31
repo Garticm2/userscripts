@@ -1,140 +1,114 @@
 // ==UserScript==
-// @name        GarticPhone / gp-mod / [2] Extensions
+// @name        GarticPhone / gp-mod / Background Changer (Unlocked)
 // @namespace   Violentmonkey Scripts
 // @match       https://garticphone.com/*
+// @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
-// @grant       GM_openInTab
 // @noframes
-// @version     4.6-free
+// @version     4.5
 // @author      -
-// @description 9/18/2021, 8:11:02 PM
+// @description Bypassed Background Changer
 // @run-at      document-end
-// @connect     github.io
-// @connect     localhost 
+// @connect     *
 // @icon        https://www.google.com/s2/favicons?sz=64&domain=garticphone.com
-// @downloadURL https://garticm2.github.io/userscripts/dist/1591521169568152.user.js
 // ==/UserScript==
 
 'use strict';
 
-(function () {
-    const SCRIPT_DATA = { name: "Extensions", version: "4.6", url: "https://garticm2.github.io/userscripts/dist/1591521169568152.user.js" },
-        REQUEST_CACHE = { VALIDATE: "no-cache", NO_CACHE: "no-store", DEFAULT: "" },
-        BASE_URL = "https://garticm2.github.io/pub",
-        resources = { style: ["dist/main.min.css"], script: ["dist/main.min.js"] };
-    let inProgress = !1;
-    document.addEventListener("DOMContentLoaded", loadResources);
-    loadResources();
-
-    function loadResources() {
-        if (!inProgress) {
-            for (const a in resources) resources[a].forEach(b => {
-                const c = document.createElement("link");
-                c.setAttribute("rel", "preload");
-                c.setAttribute("href", `${BASE_URL}/${b}`);
-                c.setAttribute("as", a);
-                document.head.appendChild(c)
-            });
-            resources.style.forEach(a => {
-                const b = document.createElement("link");
-                b.rel = "stylesheet";
-                b.href = `${BASE_URL}/${a}`;
-                b.setAttribute("defer", "");
-                document.head.appendChild(b)
-            });
-            resources.script.forEach(a => {
-                const b = document.createElement("script");
-                b.src = `${BASE_URL}/${a}`;
-                b.setAttribute("defer", "");
-                document.head.appendChild(b)
-            });
-            inProgress = !0
-        }
-    }
-    const UPDATES_URL = "https://garticm2.github.io/userscripts/dist/versions.json";
-    let outdatedScripts = new Map,
-        updatesData = {};
-    document.addEventListener("_check-for-updates", () => { document.dispatchEvent(new CustomEvent("_us_check-for-updates", { detail: { ...SCRIPT_DATA } })) });
-    document.addEventListener("_us_check-for-updates", ({ detail: { name: a, version: b, url: c } }) => {
-        const d = updatesData[a];
-        d && isOutdatedScript(b, d) && outdatedScripts.set(a, { name: a, version: b, latestVersion: d, url: c })
-    });
-    document.addEventListener("_get-outdated-scripts", a => { document.dispatchEvent(new CustomEvent("_outdated-scripts", { detail: { outdatedScripts } })) });
-    document.addEventListener("_update-script", ({ detail: { name: a } }) => {
-        (a = outdatedScripts.get(a)?.url) && GM_openInTab(`${a}?${Date.now()}.user.js`)
-    });
-    requestUpdatesData().then(a => { updatesData = a }).then(checkForUpdates);
-
-    function checkForUpdates() { document.dispatchEvent(new CustomEvent("_check-for-updates", { detail: { ...SCRIPT_DATA } })) }
-
-    function isOutdatedScript(a, b) {
-        const [c, d] = [a, b].map(e => e.split(".").map(f => +f));
-        a = Math.max(c.length, d.length);
-        for (b = 0; b < a; b++) {
-            const e = c[b] ?? 0,
-                f = d[b] ?? 0;
-            if (e !== f) return f > e
-        }
-        return !1
-    }
-
-    function requestUpdatesData() { return request({ url: UPDATES_URL }) }
-    class LocalizationController extends EventTarget {
-        static STORAGE = "gp_localization";
-        static DEFAULT_LANGUAGE = "en";
-        static PATH = "https://garticm2.github.io/localization";
-        constructor() {
-            super();
-            this.loadHashes().then(a => {
-                let { lang: b, hash: c, entries: d } = this.getCache();
-                b = b in a ? b : this.getDefaultLanguage(a);
-                c && d && a[b] === c ? this.setLocalization(b, d) : this.load(b).then(e => {
-                    this.setCache(b, a[b], e);
-                    this.setLocalization(b, e)
-                })
-            })
-        }
-        getDefaultLanguage(a) {
-            const b = window.navigator.language.split("-")[0].toLowerCase();
-            return b in a ? b : LocalizationController.DEFAULT_LANGUAGE
-        }
-        setLocalization(a, b) { document.dispatchEvent(new CustomEvent("_gp_l10n", { detail: { lang: a, entries: b } })) }
-        getLocalization() { return { lang, entries } = this }
-        getCache() { return JSON.parse(localStorage.getItem(LocalizationController.STORAGE)) ?? {} }
-        setCache(a, b, c) { localStorage.setItem(LocalizationController.STORAGE, JSON.stringify({ lang: a, hash: b, entries: c })) }
-        load(a) { return request({ url: `${LocalizationController.PATH}/locales/${a}.json` }) }
-        loadHashes() { return request({ url: `${LocalizationController.PATH}/hashes.json` }) }
-    }
-    new LocalizationController;
-
-    function request({ url: a, method: b = "GET", headers: c = {}, data: d, responseType: e = "json", successStatus: f = 200, cache: k = REQUEST_CACHE.VALIDATE }, g) {
-        return new Promise((m, n) => {
-            GM_xmlhttpRequest({
-                url: a,
-                method: b,
-                headers: Object.assign(getCacheHeaders(k), c),
-                responseType: "json" === e ? "text" : e,
-                data: d,
-                anonymous: !0,
-                onload: l => {
-                    try {
-                        if (Array.isArray(f) && f.includes(l.status) || l.status === f) {
-                            let h = l.response || l.responseText;
-                            l.response instanceof ArrayBuffer && ("json" === e || "text" === e) && (h = (new TextDecoder).decode(h));
-                            switch (e) {
-                                case "json":
-                                    h = JSON.parse(h)
-                            }
-                            g ? g(Object.assign({}, l, { response: h }), m, n) : m(h)
-                        } else n(l.status)
-                    } catch (h) { n(h.message) }
-                },
-                ontimeout: n,
-                onerror: n
-            })
-        })
-    }
-
-    function getCacheHeaders(a) { return a === REQUEST_CACHE.DEFAULT ? {} : { "Cache-Control": a } }
-    console.log("gpmod: extensions (free edition)");
-}).call(this)
+(function(){
+const SCRIPT_DATA={name:"Background Changer",version:"4.5",url:""};GM_addStyle('\n:root {\n  --gp-background: none;\n  --gp-background-color: none;\n  --gp-background-image: none;\n  --gp-background-size: \'cover\';\n  --gp-background-video-width: unset;\n  --gp-background-video-height: unset;\n  --gp-background-screen-select-label: \'\u0432\u0441\u0435\';\n  --gp-background-screen-select-hover-label: \'\u0432\u044b\u0431\u0440\u0430\u0442\u044c\';\n}\nbody.gp-bg-enabled_.gp-bg-custom_ {\n  background: none !important;\n  background-repeat: no-repeat !important;\n  background-position: center !important;\n  background-color: var(--gp-background-color) !important;\n  background-image: var(--gp-background-image) !important;\n  background-size: var(--gp-background-size) !important;\n  resize: both;\n  transition: background-image 0.3s;\n}\nbody.gp-bg-enabled_:not(.gp-bg-preview_) {\n  transition: none;\n}\nbody.gp-bg-enabled_.gp-bg-custom_ #__next {\n  background-image: var(--gp-background) !important;\n}\nbody.gp-hide-border_ .screen {\n  border-color: transparent !important;\n  box-shadow: none !important;\n}\n.gp-bg-video_ {\n  position: fixed;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%);\n  width: var(--gp-background-video-width);\n  height: var(--gp-background-video-height);\n  z-index: -1;\n  background-size: contain;\n  pointer-events: none;\n  animation: gp_bg_video_fade-in_ 0.5s;\n}\nbody.gp-bg-enabled_:not(.gp-bg-preview_) > .gp-bg-video_ {\n  animation: none;\n}\n@keyframes gp_bg_video_fade-in_ {\n  from { opacity: 0; }\n  to { opacity: 1; }\n}\nbody:not(.gp-bg-enabled_) .gp-bg-video_ {\n  display: none;\n}\n.gp-bg_ {\n  display: flex;\n  width: 248px;\n  flex-direction: column;\n  position: fixed;\n  top: 0;\n  right: 0;\n  padding: 10px;\n  padding-top: 43px;\n  border-radius: 6px;\n  background-color: #535fa1;\n  box-sizing: border-box;\n  z-index: 10020;\n  font-family: "Bold";\n  box-shadow: -5px 5px 6px 0px rgb(0 0 0 / 25%);\n  outline: 1px solid #7779a6;\n}\n.gp-bg_:not(.shown_) {\n  background-color: transparent;\n  box-shadow: none;\n  outline: none;\n  pointer-events: none;\n}\n.gp-bg_[data-lang="ru"] {\n  width: 248px;\n}\n.gp-bg_[data-lang="en"] {\n  width: 252px;\n}\n.gp-bg_[data-lang="es"] {\n  width: 278px;\n}\n.gp-bg_:not(.shown_) > *:not(.gp-bg-settings-btn_) {\n  display: none;\n}\n.gp-bg_ .gp-bg-settings-btn_ {\n  width: 30px;\n  height: 30px;\n  background-color: var(--gp-module-btn-bg-color, #a9e4ff);\n  border-radius: 50%;\n  position: absolute;\n  top: 5px;\n  right: 7px;\n  z-index: 1;\n  pointer-events: all;\n}\n.gp-bg_ .gp-bg-settings-btn_::after {\n  content: "";\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n  background: center / 59% no-repeat url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' x=\'0px\' y=\'0px\' viewBox=\'0 0 460.002 460.002\'%3E%3Cpath d=\'M427.137,0H32.865C14.743,0,0,14.743,0,32.865v408.543c0,10.253,8.341,18.594,18.594,18.594h408.543 c18.122,0,32.865-14.743,32.865-32.865V32.865C460.002,14.743,445.259,0,427.137,0z M139.001,56.001c39.149,0,71,31.851,71,71 s-31.851,71-71,71c-39.149,0-71-31.851-71-71C68.001,87.852,99.852,56.001,139.001,56.001z M405.24,393.215 c-2.634,4.801-7.675,7.786-13.151,7.786H67.913c-5.477,0-10.518-2.984-13.151-7.786c-2.634-4.802-2.442-10.657,0.501-15.275 l77.092-120.984c2.754-4.322,7.524-6.939,12.65-6.939s9.896,2.617,12.65,6.939l37.029,58.111l72.346-113.536 c2.754-4.323,7.524-6.939,12.65-6.939c5.125,0,9.896,2.617,12.65,6.939L404.739,377.94 C407.682,382.559,407.874,388.414,405.24,393.215z\'/%3E%3C/svg%3E");\n}\n.gp-bg_ > .title_ {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 100%;\n  color: #fff;\n  font-size: 16px;\n  line-height: 16px;\n  font-family: "Bold";\n  text-transform: uppercase;\n  padding: 12px;\n}\n.gp-bg_ .enabled_ {\n  display: none;\n}\n.gp-bg_ label[for="gp-bg-enabled_"],\n.gp-bg_ .add-btn_ {\n  text-align: center;\n  line-height: 30px;\n  padding: 0 10px;\n  border: none;\n  border-radius: 7px;\n  cursor: pointer;\n  font-family: "Black";\n  color: #301A6B;\n  text-transform: uppercase;\n  background-color: #fff;\n  box-shadow: 0px 4px 0px 0px #301a6b;\n  display: block;\n  white-space: nowrap;\n}\n.gp-bg_ label[for="gp-bg-enabled_"]:hover,\n.gp-bg_ .add-btn_:hover {\n  background-color: rgb(203, 182, 233);\n}\n\n.gp-bg_ label[for="gp-bg-enabled_"]:active {\n  margin: 2px 0px 0px;\n  box-shadow: 0px 2px 0px 0px #301a6b;\n}\n\n.gp-bg_ .add-btn_:active {\n  margin: 12px 0px 2px;\n  box-shadow: rgb(48, 26, 107) 0px 2px 0px 0px;\n}\n\n.gp-bg_ label[for="gp-bg-enabled_"] {\n  margin: 0px 0px 2px;\n  font-size: 15px;\n}\n.gp-bg_ :is(.source-menu_, .stretch_) {\n  display: block;\n  width: 100%;\n  font-size: 17px;\n  padding-left: 4px;\n  background-color: rgba(255,255,255,.8);\n  font-family: "Bold";\n  color: #301A6B;\n}\n.gp-bg_ :is(.source-menu_, .stretch_):hover {\n  background-color: #fff;\n}\n.gp-bg_ .source-menu_ {\n  margin-top: 10px;\n}\n.gp-bg_ .sources_ {\n  margin-top: 10px;\n}\n.gp-bg_ .sources_ > * {\n  display: none;\n}\n.gp-bg_ [data-source="pc"] .pc_,\n.gp-bg_ [data-source="url"] .url_,\n.gp-bg_[data-source="solid"] .solid_,\n.gp-bg_ [data-source="chromakey"] .chromakey_ {\n  display: flex;\n}\n.gp-bg_ .chromakey_ .color_ {\n  display: inline-block;\n  width: 30px;\n  height: 30px;\n  border: 1px solid #000000ad;\n  cursor: pointer;\n  outline: 1px solid rgb(255 255 255 / 40%);\n  border-radius: 5px;\n}\n.gp-bg_ .chromakey_ .color_:hover {\n  outline-color: #fff;\n}\n.gp-bg_ .chromakey_ .color_:nth-child(n+2) {\n  margin-left: 4px;\n}\n.gp-bg_ .select-solid-color_ {\n  width: 100%;\n  height: 52px;\n}\n.gp-bg_ .gp-ui-color_ {\n  border: 1px solid rgb(255 255 255 / 40%);\n  border-radius: 5px;\n  padding: 0;\n  appearance: none;\n  cursor: pointer;\n  background: none;\n  box-sizing: content-box;\n}\n.gp-bg_ .gp-ui-color_ {\n}\n.gp-bg_ .gp-ui-color_:focus {\n  outline: none;\n}\n.gp-bg_ .gp-ui-color_::-webkit-color-swatch-wrapper {\n  padding: 0;\n  border-radius: 4px;\n}\n.gp-bg_ .gp-ui-color_::-webkit-color-swatch {\n  border: none;\n  border-radius: 4px;\n}\n.gp-bg_ .gp-ui-color_::-moz-color-swatch {\n  border: none;\n  border-radius: 4px;\n}\n.gp-bg_ .load-from-pc_ {\n  display: none;\n}\n.gp-bg_ label[for="load-from-pc_"] {\n  display: flex;\n  width: 100%;\n  height: 82px;\n  text-align: center;\n  line-height: 17px;\n  cursor: pointer;\n  font-family: "Bold";\n  font-size: 15px;\n  color: #ffffffc2;\n  text-transform: none;\n  background-color: #ffffff61;\n  border: 2px dashed #ffffff9e;\n  justify-content: center;\n  align-items: center;\n  border-radius: 10px;\n  padding: 4px;\n}\n.gp-bg_ label[for="load-from-pc_"]:hover {\n  color: #ffffffe6;\n}\n.gp-bg_.drop_ label[for="load-from-pc_"] {\n  background-color: #ffffff8c;\n}\n.gp-bg_ .load-from-url_ {\n  width: -webkit-fill-available;\n  font-size: 14px;\n  line-height: 22px;\n}\n.gp-bg_ .load-from-url_:invalid {\n  outline: 2px solid red;\n}\n.gp-bg_ .load-from-url_::placeholder {\n  color: #301a6b45;\n}\n.gp-bg_ .label_ {\n  display: inline-block;\n  margin-top: 8px;\n  margin-bottom: 2px;\n}\n.gp-bg_ .stretch-block_ {\n  display: none;\n}\n.gp-bg_:is([data-source=\'pc\'],[data-source=\'url\']) .stretch-block_ {\n  display: block;\n}\n.gp-bg_ .hide_border_ {\n  display: none;\n}\n.gp-bg_ label[for="hide_border_"] {\n  display: block;\n  height: 20px;\n  line-height: 20px;\n  margin-top: 8px;\n  padding-left: 28px;\n  position: relative;\n  cursor: pointer;\n}\n.gp-bg_ label[for="hide_border_"]:hover {\n  color: #fff;\n}\n.gp-bg_ label[for="hide_border_"]::before {\n  content: \'\';\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 22px;\n  height: 22px;\n  border: 2px solid #624ca0;\n  border-radius: 3px;\n  box-sizing: border-box;\n  background-color: rgba(255,255,255,.8);\n  color: #624ca0;\n  text-align: center;\n  font-weight: bold;\n}\n.gp-bg_ .hide_border_:checked + label[for="hide_border_"]::before {\n  content: \'\u2714\';\n}\n.gp-bg_ label {\n  color: rgba(255,255,255,.8);\n}\n.gp-bg_ .screens_ {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 2px;\n  border: 1px solid rgb(255 255 255 / 40%);\n  border-radius: 5px;\n  padding: 5px;\n}\n.gp-bg_ .screens_.folded_ {\n  pointer-events: none;\n}\n.gp-bg_ .screens_.folded_::after {\n  content: var(--gp-background-screen-select-label);\n  width: 100%;\n  background-color: #dedeec;\n  color: #301A6B;\n  min-height: 18px;\n  padding: 2px 4px;\n  border-radius: 2px;\n  text-align: center;\n  font-size: 14px;\n  line-height: 18px;\n  cursor: pointer;\n  pointer-events: auto;\n}\n.gp-bg_ .screens_.folded_:hover::after {\n  content: var(--gp-background-screen-select-hover-label);\n  background-color: #f5f5f9;\n}\n.gp-bg_ .screens_.folded_ > label {\n  display: none;\n}\n.gp-bg_ .screens_ .screen_ {\n  background-color: #dedeec4d;\n  min-height: 18px;\n  padding: 2px 4px;\n  border-radius: 2px;\n  flex-grow: 1;\n  text-align: center;\n  font-size: 14px;\n  line-height: 18px;\n  color: #494b83;\n  position: relative;\n  cursor: pointer;\n}\n.gp-bg_ .screens_ .screen_:hover {\n  background-color: #dedeec73;\n}\n.gp-bg_ .screens_ .screen_.current_::after {\n  content: \'\';\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 0;\n  height: 0;\n  border-style: solid;\n  border-width: 10px 10px 0 0;\n  border-color: #fd8282b3 transparent transparent transparent;\n  border-radius: 2px 0 0 0;\n}\n.gp-bg_ .screens_ .screen_input_:checked + .screen_.current_::after {\n  border-color: #ff000085 transparent transparent transparent;\n}\n.gp-bg_ .screens_ .screen_input_ {\n  display: none;\n}\n.gp-bg_ .screens_ .screen_input_:checked + .screen_ {\n  background-color: #dedeec;\n  color: #301A6B;\n}\n.gp-bg_ .screens_ .screen_input_:checked + .screen_:hover {\n  background-color: #f5f5f9;\n}\n.gp-bg_ .current-screen_ {\n  display: inline-block;\n  outline: 1px dotted #dedeec;\n  border-radius: 2px;\n  color: #dedeec;\n  padding: 2px 12px;\n  text-align: center;\n  margin-top: 4px;\n}\n.gp-bg_ .current-backgrounds-block_.empty_ {\n  display: none;\n}\n.gp-bg_ .current-backgrounds_ {\n  display: grid;\n  grid-template-columns: auto auto 1fr 17px;\n  align-items: start;\n  border: 1px solid rgb(255 255 255 / 40%);\n  border-radius: 5px;\n  padding: 5px;\n  gap: 2px 4px;\n}\n.gp-bg_ .current-backgrounds_ .bg_ {\n  display: contents;\n  color: #dedeec;\n}\n.gp-bg_ .current-backgrounds_ .bg_ > * {\n  min-height: 22px;\n}\n.gp-bg_ .current-backgrounds_ .type_ {\n  font-size: 15px;\n  line-height: 22px;\n  cursor: pointer;\n}\n.gp-bg_ .current-backgrounds_ .type_:hover {\n  color: #fff;\n}\n.gp-bg_ .current-backgrounds_ .color_ {\n  width: 22px;\n  height: 22px;\n  box-sizing: border-box;\n}\n.gp-bg_ .current-backgrounds_ .color_:hover {\n  border-color: #fff;\n}\n.gp-bg_ .current-backgrounds_ .bg-screens_ {\n  display: flex;\n  flex-wrap: wrap;\n  align-content: center;\n  gap: 2px 2px;\n}\n.gp-bg_ .current-backgrounds_ .screen_ {\n  background-color: #dedeec;\n  height: 100%;\n  min-height: 18px;\n  padding: 2px 4px;\n  border-radius: 2px;\n  flex-grow: 1;\n  text-align: center;\n  color: #301a6b;\n  font-size: 14px;\n  line-height: 18px;\n}\n.gp-bg_ .current-backgrounds_ .delete-btn_ {\n  text-align: center;\n  line-height: 22px;\n  font-size: 20px;\n  cursor: pointer;\n}\n.gp-bg_ .current-backgrounds_ .delete-btn_:hover {\n  color: #fff;\n}\n.gp-bg_ .add-btn_ {\n  margin: 10px 0 4px;\n}\n.watermark {\n  background-image: none !important;\n}\n');
+const L={WIN_TITLE:"\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0430 \u0444\u043e\u043d\u0430",MODULE_BTN_TTL:"\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0430 \u0444\u043e\u043d\u0430",ENABLE_BTN:"\u0412\u043a\u043b\u044e\u0447\u0438\u0442\u044c",DISABLE_BTN:"\u041e\u0442\u043a\u043b\u044e\u0447\u0438\u0442\u044c",SOURCE_PC:"\u0421 \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u0430",SOURCE_LINK:"\u041f\u043e \u0441\u0441\u044b\u043b\u043a\u0435",SOURCE_SOLID_COLOR:"\u0421\u043f\u043b\u043e\u0448\u043d\u043e\u0439 \u0446\u0432\u0435\u0442",
+SOURCE_CHROMAKEY:"\u0425\u0440\u043e\u043c\u0430\u043a\u0435\u0439",FILE_DROP_AREA:"\u041f\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0444\u0430\u0439\u043b \u0441\u044e\u0434\u0430 \u0438\u043b\u0438 \u0432\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0441 \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u0430",LOAD_FROM_URL_TTL:"\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0444\u0430\u0439\u043b \u043f\u043e \u0441\u0441\u044b\u043b\u043a\u0435",SCALE_BG:"\u041c\u0430\u0441\u0448\u0442\u0430\u0431\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435 \u0444\u043e\u043d\u0430",
+SCALE_FULL_SIZE:"\u041e\u0440\u0438\u0433\u0438\u043d\u0430\u043b\u044c\u043d\u044b\u0439 \u0440\u0430\u0437\u043c\u0435\u0440",SCALE_STRETCH:"\u041f\u043e \u043c\u0435\u043d\u044c\u0448\u0435\u0439 \u0441\u0442\u043e\u0440\u043e\u043d\u0435",SCALE_CONTAIN:"\u0412\u043f\u0438\u0441\u0430\u0442\u044c \u0432 \u0440\u0430\u0437\u043c\u0435\u0440\u044b \u043e\u043a\u043d\u0430",HIDE_GAME_BORDER:"\u0421\u043a\u0440\u044b\u0442\u044c \u0440\u0430\u043c\u043a\u0443 \u0438\u0433\u0440\u044b",SCREENS:"\u042d\u043a\u0440\u0430\u043d\u044b",
+SCREENS_SELECT_HOVER:"\u0432\u044b\u0431\u0440\u0430\u0442\u044c",SCREEN_CATEGORIES:"\u0432\u0445\u043e\u0434|\u043b\u043e\u0431\u0431\u0438|\u0440\u0435\u0434\u0430\u043a\u0442\u043e\u0440|\u043f\u0440\u0435\u0432\u044c\u044e|\u043e\u043f\u0438\u0441\u0430\u043d\u0438\u0435|\u0433\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u044f|\u0430\u043b\u044c\u0431\u043e\u043c\u044b|\u043c\u043e\u0434\u0435\u0440\u0430\u0446\u0438\u044f|\u0432\u0441\u0435 \u044d\u043a\u0440\u0430\u043d\u044b",SET_BTN:"\u0423\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c",
+BACKGROUNDS:"\u0423\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d\u043d\u044b\u0435 \u0444\u043e\u043d\u044b",BACKGROUND_TYPES:"\u0446\u0432\u0435\u0442|\u0438\u0437\u043e\u0431\u0440.|\u0432\u0438\u0434\u0435\u043e",EDIT_BACKGROUND_TTL:"\u0420\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0444\u043e\u043d",EDIT_AVERAGE_COLOR_TTL:"\u0418\u0437\u043c\u0435\u043d\u0438\u0442\u044c \u0443\u0441\u0440\u0435\u0434\u043d\u0451\u043d\u043d\u044b\u0439 \u0446\u0432\u0435\u0442 \u0444\u043e\u043d\u0430",
+DELETE_BACKGROUND_TTL:"\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0444\u043e\u043d"},isFirefox=navigator.userAgent.toLowerCase().includes("firefox");
+class GPBackgroundDB_ extends EventTarget{static NAME="gp_background_db";static STORE_NAME="backgrounds_v3";static VERSION=3;static READ="readonly";static WRITE="readwrite";constructor(){super();this.db=null;this.initialized=!1;this.oldVersion=0;this.updatedData=null;this.init().then(([b,c])=>{this.initialized=!0;this.dispatchEvent(new CustomEvent("init",{detail:{entries:b,settings:c}}))})}init(){return new Promise((b,c)=>{const e=window.indexedDB.open(GPBackgroundDB_.NAME,GPBackgroundDB_.VERSION);
+e.addEventListener("error",d=>{console.error("Background Database Request Error:",d.target.error);c(d.target.error)});e.addEventListener("success",d=>{d=d.target.result;d.onerror=a=>{console.error("Background Database Error:",a.target.error)};this.db=d;switch(this.oldVersion){case 0:d=d.transaction([GPBackgroundDB_.STORE_NAME],GPBackgroundDB_.READ).objectStore(GPBackgroundDB_.STORE_NAME);d=d.getAll();d.onsuccess=a=>{b([a.target.result])};break;case 2:d.objectStoreNames.contains("backgrounds")?(d=
+d.transaction("backgrounds",GPBackgroundDB_.READ).objectStore("backgrounds"),d=d.getAll(),d.onsuccess=async a=>{const f=[];try{const g=a.target.result[0],h=JSON.parse(localStorage.getItem("bg_settings")),n=Object.assign({},GPBackground_.DEFAULT_STATE),p=Object.assign({},GPBackground_.DEFAULT_SETTINGS);if(h){const {enabled:k,source:m}=h;Object.assign(p,{enabled:k,source:m})}if(g&&h){let {color:k,stretch:m,hideBorder:r}=h;const q=g.image?GPBackground_.TYPE.IMAGE:g.video?GPBackground_.TYPE.VIDEO:GPBackground_.TYPE.COLOR;
+let l;a=null;q!==GPBackground_.TYPE.COLOR&&(l=g.image??g.video,a=await Utils.getBlobHash(l),k=await Utils.getAverageColor(l));Object.assign(n,{type:q,color:k,blob:l,hash:a,stretch:m,border:!r});f.push(n)}this.set(f).then(()=>{localStorage.removeItem("bg_settings");b([f,p])})}catch(g){localStorage.removeItem("bg_settings"),b([f])}}):b([[]])}});e.addEventListener("upgradeneeded",d=>{const a=d.target.result;this.oldVersion=d.oldVersion;switch(d.oldVersion){case 0:case 2:d=a.createObjectStore(GPBackgroundDB_.STORE_NAME),
+d.createIndex("type","type"),d.createIndex("color","color"),d.createIndex("blob","blob"),d.createIndex("hash","hash"),d.createIndex("stretch","stretch"),d.createIndex("border","border"),d.createIndex("screens","screens")}})})}isInitialized(){return this.initialized}async getStore(b=GPBackgroundDB_.WRITE){try{return this.db.transaction([GPBackgroundDB_.STORE_NAME],b).objectStore(GPBackgroundDB_.STORE_NAME)}catch(c){return await this.init(),this.getStore(b)}}async clear(b){return new Promise(async c=>
+{b??=await this.getStore();b.clear().addEventListener("success",c)})}async set(b){const c=await this.getStore();await this.clear(c);let e=0;for(let d of b)await this.add(d,e++,c)}add(b,c,e){return new Promise(async d=>{e??=await this.getStore();const a=e.add(b,c);a.addEventListener("success",d);a.addEventListener("error",d)})}}
+class GPBackground_{static SETTINGS_STORAGE="gp_background";static DEFAULT_LANGUAGE="ru";static IMAGE_FILE_TYPES=["image/png","image/jpeg","image/gif","image/webp","image/avif"];static VIDEO_FILE_TYPES=["video/mp4","video/webm"];static ACCEPTED_FILE_TYPES=[...this.IMAGE_FILE_TYPES,...this.VIDEO_FILE_TYPES];static TYPE={COLOR:"color",IMAGE:"image",VIDEO:"video"};static SOURCES={CHROMAKEY:"chromakey",SOLID:"solid",PC:"pc",URL:"url"};static BG_STRETCH={FULLSIZE:"full-size",STRETCH:"stretch",CONTAIN:"contain"};static STRETCH_STYLES={"full-size":"auto",
+stretch:"cover",contain:"contain"};static DEFAULT_SETTINGS={enabled:!1,source:this.SOURCES.PC};static DEFAULT_STATE={type:this.TYPE.COLOR,color:"#000000",blob:null,hash:null,stretch:this.BG_STRETCH.STRETCH,border:!0,screens:["all"]};static CHROMAKEY_COLORS=["#0047bb","#00b140"];static SCREEN_CATEGORIES={login:" authorize waiting redirecting terms privacy assets".split(" "),lobby:["lobby"],painter:["draw"],preview:["memory"],writing:["start","write","reply"],generating:["generating"],album:["book",
+"rank"],moderation:["mod"]};constructor(){this.language=GPBackground_.DEFAULT_LANGUAGE;this.typeLabels=this.buildTypeLabels();this.screenLabels=this.buildScreenLabels();this.settings=Object.assign({},GPBackground_.DEFAULT_SETTINGS,JSON.parse(localStorage.getItem(GPBackground_.SETTINGS_STORAGE)));this.state=Object.assign({},GPBackground_.DEFAULT_STATE);this.screensMap=new Map;this.categoriesMap=this.getCategoriesMap();this.container;this.enableBtn;this.enableBtnLabel;this.currentBackgroundsBlock;this.currentBackgrounds;
+this.video;this.sourceMenu;this.sourceElem;this.solidColor;this.stretchMenu;this.hideBorderCb;this.screenList;this.lastObjectURL;this.backgrounds;this.currentBg;this.currentPath;this.isFrameShown=!1;this.excludeOtherScreensFlag=!0;this.handleNavigate=this.handleNavigate.bind(this);this.db=new GPBackgroundDB_;this.db.addEventListener("init",({detail:{entries:b,settings:c}})=>{c&&this.updateSettings(c);this.backgrounds=this.getFilteredBackgrounds(b);this.render()},{once:!0});document.addEventListener("_gp_l10n",
+({detail:{lang:b,entries:c}})=>{b!==this.language&&(Object.assign(L,c.GPBackgroundChanger_??{}),this.language=b,this.typeLabels=this.buildTypeLabels(),this.screenLabels=this.buildScreenLabels(),this.db.isInitialized()&&this.render());window.navigation?.removeEventListener("navigate",this.handleNavigate)});document.addEventListener("_url_changed",({detail:{path:b}})=>{this.handleURLChange(b.split("?")[0])});window.navigation?.addEventListener("navigate",this.handleNavigate)}render(){this.container&&
+this.container.remove();this.container=document.createElement("div");this.container.className="gp-bg_";this.container.dataset.lang=this.language;this.container.dataset.source=this.settings.source;this.container.innerHTML=`
+  <div class="gp-bg-settings-btn_ gp-module-btn_" title="${L.MODULE_BTN_TTL}"></div>
+  <div class="title_">${L.WIN_TITLE}</div>
+  <input class="enabled_" id="gp-bg-enabled_" type="checkbox"/>
+  <label for="gp-bg-enabled_">${L.ENABLE_BTN}</label>
+  <select class="source-menu_" name="source_" value="${this.settings.source}">
+    <option value="pc">${L.SOURCE_PC}</option>
+    <option value="url">${L.SOURCE_LINK}</option>
+    <option value="solid">${L.SOURCE_SOLID_COLOR}</option>
+    <option value="chromakey">${L.SOURCE_CHROMAKEY}</option>
+  </select>
+  <div class="sources_" data-source="${this.settings.source}">
+    <div class="chromakey_">
+      ${GPBackground_.CHROMAKEY_COLORS.map(a=>`<div class="color_" data-color="${a}" style="background-color: ${a};"></div>`).join("")}
+    </div>
+    <div class="solid_">
+      <input class="select-solid-color_ gp-ui-color_" type="color">
+    </div>
+    <div class="pc_">
+      <input class="load-from-pc_" id="load-from-pc_" type="file" accept="${GPBackground_.ACCEPTED_FILE_TYPES.join(", ")}">
+      <label for="load-from-pc_">${L.FILE_DROP_AREA}</label>
+    </div>
+    <div class="url_">
+      <input class="load-from-url_" type="text" placeholder="https://example.com/image.png" pattern="^https?://.+/.+" spellcheck="false">
+    </div>
+  </div>
+  <div class="options_">
+    <div class="stretch-block_">
+      <label class="label_">${L.SCALE_BG}</label>
+      <select class="stretch_" name="stretch_" value="${this.settings.stretch}">
+        <option value="full-size">${L.SCALE_FULL_SIZE}</option>
+        <option value="stretch">${L.SCALE_STRETCH}</option>
+        <option value="contain">${L.SCALE_CONTAIN}</option>
+      </select>
+    </div>
+    <input class="hide_border_" id="hide_border_" type="checkbox">
+    <label for="hide_border_">${L.HIDE_GAME_BORDER}</label>
+    <label class="label_">${L.SCREENS}</label>
+    <form class="screens_ folded_"></form>
+  </div>
+  <div class="add-btn_">${L.SET_BTN}</div>
+  <div class="current-backgrounds-block_">
+    <label class="label_">${L.BACKGROUNDS}</label>
+    <form class="current-backgrounds_"></form>
+  </div>
+  `;document.body.appendChild(this.container);const b=document.querySelector(".gp-bg-settings-btn_");b.addEventListener("click",a=>{b.classList.toggle("pressed_");(this.isFrameShown=this.container.classList.toggle("shown_"))?this.updateCurrentScreen():(this.setBackground(),this.resetState(),this.resetScreenList())});this.enableBtnLabel=this.container.querySelector('label[for="gp-bg-enabled_"]');this.enableBtn=this.container.querySelector(".enabled_");this.enableBtn.addEventListener("change",a=>{a=
+a.target.checked;document.body.classList.toggle("gp-bg-enabled_",a);this.enableBtnLabel.textContent=this.enableBtn.checked?L.DISABLE_BTN:L.ENABLE_BTN;this.updateSettings({enabled:a});a&&(this.currentBg=void 0,this.setBackground())});this.enableBtn.checked=this.settings.enabled;this.enableBtnLabel.textContent=this.enableBtn.checked?L.DISABLE_BTN:L.ENABLE_BTN;this.sourceElem=this.container.querySelector(".sources_");this.sourceMenu=this.container.querySelector(".source-menu_");this.sourceMenu.value=
+this.settings.source;this.sourceMenu.addEventListener("change",a=>{a=a.target.value;this.sourceElem.dataset.source=a;this.container.dataset.source=a;this.updateSettings({source:a})});this.container.querySelector(".chromakey_").addEventListener("click",a=>{a.target.matches(".color_")&&(a=a.target.dataset.color,this.solidColor.value=a,this.updatePreview({type:GPBackground_.TYPE.COLOR,color:a,blob:null,hash:null}))});this.solidColor=this.container.querySelector(".select-solid-color_");this.solidColor.addEventListener("input",
+a=>{this.updatePreview({type:GPBackground_.TYPE.COLOR,color:a.target.value,blob:null,hash:null})});this.solidColor.value=this.state.color??GPBackground_.DEFAULT_STATE.color;this.container.querySelector(".load-from-pc_").addEventListener("change",a=>{a.target.files?.length&&(this.loadFileHandler(a.target.files[0]),a.target.value="")});const c=this.container;let e;c.addEventListener("dragenter",a=>{a.preventDefault();const f=GPBackground_.SOURCES.PC;this.container.dataset.source=f;this.sourceMenu.value=
+f;this.sourceElem.dataset.source=f;this.updateSettings({source:f});e=a.target;c.classList.add("drop_")});c.addEventListener("dragleave",a=>{a.target===e&&(a.preventDefault(),c.classList.remove("drop_"))});c.addEventListener("drop",a=>{a.preventDefault();let f;a.dataTransfer.items&&"file"===a.dataTransfer.items[0].kind?f=a.dataTransfer.items[0].getAsFile():a.dataTransfer.files.length&&(f=a.dataTransfer.files[0]);f&&GPBackground_.ACCEPTED_FILE_TYPES.includes(f.type)&&this.loadFileHandler(f);c.classList.remove("drop_")});
+c.addEventListener("dragover",a=>{a.preventDefault();a.dataTransfer.dropEffect="move"});const d=this.container.querySelector(".load-from-url_");d.title=L.LOAD_FROM_URL_TTL;d.addEventListener("keydown",a=>{if(("Enter"===a.code||"NumpadEnter"===a.code)&&!a.repeat){const f=a.target.value;/^https?:\/\/.+\/.+/.test(f)&&this.loadImageFromURL(f).then(g=>{this.loadFileHandler(g);a.target.value=""})}});d.addEventListener("focus",a=>{a.target.setSelectionRange(0,0);a.target.select()});this.stretchMenu=this.container.querySelector(".stretch_");
+this.stretchMenu.addEventListener("change",a=>{this.updatePreview({stretch:a.target.value})});this.hideBorderCb=this.container.querySelector(".hide_border_");this.hideBorderCb.addEventListener("change",a=>{document.body.classList.toggle("gp-hide-border_",this.settings.enabled?!!a.target.checked:!1);this.updatePreview({border:!a.target.checked})});this.hideBorderCb.checked=!this.state.border;document.body.classList.toggle("gp-hide-border_",!this.state.border);this.screenList=this.container.querySelector(".screens_");
+this.screenList.addEventListener("click",a=>{a.preventDefault()});this.screenList.addEventListener("click",a=>{a.target===this.screenList&&this.screenList.classList.remove("folded_")},{once:!0});this.screenList.addEventListener("pointerdown",a=>{a.target.form===this.screenList&&(a=a.target.control,a.checked=!a.checked,a.dispatchEvent(new Event("change",{bubbles:!0})))});this.screenList.addEventListener("change",a=>{this.excludeOtherScreensFlag&&([...this.screenList.elements].forEach(f=>{f.checked=
+!1}),a.target.checked=!0,this.excludeOtherScreensFlag=!1);a=[...this.screenList.elements].filter(f=>f.checked).map(f=>f.name);a.length===this.screenList.elements.length?a=["all"]:0===a.length&&([...this.screenList.elements].forEach(f=>{f.checked=!0}),a=["all"],this.excludeOtherScreensFlag=!0);this.updateState({screens:a})});Object.keys(GPBackground_.SCREEN_CATEGORIES).forEach(a=>{var f=document.createElement("input");f.id=`screen_${a}_`;f.className="screen_input_";f.type="checkbox";f.name=a;f.checked=
+!0;this.screenList.appendChild(f);f=document.createElement("label");f.className="screen_";f.textContent=this.screenLabels[a];f.setAttribute("for",`screen_${a}_`);this.screenList.appendChild(f)});document.documentElement.style.setProperty("--gp-background-screen-select-label",`'${this.screenLabels.all}'`);document.documentElement.style.setProperty("--gp-background-screen-select-hover-label",`'${L.SCREENS_SELECT_HOVER}'`);this.updateCurrentScreen();this.container.querySelector(".add-btn_").addEventListener("click",
+async()=>{this.enable();await this.addBackground(structuredClone(this.state));this.setBackground();this.resetScreenList()});this.currentBackgroundsBlock=this.container.querySelector(".current-backgrounds-block_");this.currentBackgrounds=this.container.querySelector(".current-backgrounds_");this.currentBackgrounds.addEventListener("click",a=>{a.target.classList.contains("delete-btn_")?(a=this.backgrounds.splice(a.target.dataset.index,1)[0],this.updateBackgrounds(),a===this.currentBg&&this.setBackground()):
+a.target.classList.contains("type_")&&(this.updatePreview(this.backgrounds[a.target.dataset.index]),this.updateView())});this.currentBackgrounds.addEventListener("click",a=>{a.target.classList.contains("type_")&&this.screenList.classList.remove("folded_")},{once:!0});this.currentBackgrounds.addEventListener("auxclick",async a=>{if(2===a.button&&a.target.classList.contains("color_")){const f=this.backgrounds[a.target.dataset.index];if(f.type===GPBackground_.TYPE.IMAGE||f.type===GPBackground_.TYPE.VIDEO){const g=
+await Utils.getAverageColor(f.blob,f.type);a.target.value=g;f.color=g;this.updateBackgrounds();f===this.currentBg&&this.updateBackground(f)}}});this.currentBackgrounds.addEventListener("change",a=>{const f=this.backgrounds[a.target.dataset.index];f.color=a.target.value;this.updateBackgrounds();f===this.currentBg&&this.updateBackground(f)});this.currentBackgrounds.addEventListener("input",a=>{this.backgrounds[a.target.dataset.index]===this.currentBg&&document.documentElement.style.setProperty("--gp-background-color",
+a.target.value)});(1<this.backgrounds.length||1===this.backgrounds.length&&"all"!==this.backgrounds[0].screens[0])&&this.screenList.classList.remove("folded_");this.updateCurrentBackgrounds();this.video||(this.video=document.createElement("video"),this.video.className="gp-bg-video_",this.video.volume=0,this.video.setAttribute("muted",""),this.video.setAttribute("autoplay",""),this.video.setAttribute("loop",""),this.video.addEventListener("loadedmetadata",a=>{this.updateVideoStretch(this.state.stretch)}),
+document.body.firstElementChild.before(this.video));window.addEventListener("resize",a=>{this.updateVideoStretch(this.state.stretch)});document.body.classList.toggle("gp-bg-enabled_",this.settings.enabled);this.currentBg=void 0;this.settings.enabled&&this.setBackground()}resetScreenList(){[...this.screenList.elements].forEach(b=>{b.checked=!0});this.excludeOtherScreensFlag=!0;this.updateState({screens:["all"]})}updateView(){this.solidColor.value=this.state.color;this.stretchMenu.value=this.state.stretch;
+this.hideBorderCb.checked=!this.state.border;this.excludeOtherScreensFlag=!1;const b="all"===this.state.screens[0]?null:new Set(this.state.screens);[...this.screenList.elements].forEach(c=>{c.checked=!b||b.has(c.name)})}toggle(b){b=b??!this.enableBtn.checked;this.enableBtn.checked=b;document.body.classList.toggle("gp-bg-enabled_",b);this.enableBtnLabel.textContent=this.enableBtn.checked?L.DISABLE_BTN:L.ENABLE_BTN;this.updateSettings({enabled:b})}enable(){this.settings.enabled||this.toggle(!0)}getCategoriesMap(){const b=
+new Map;Object.entries(GPBackground_.SCREEN_CATEGORIES).forEach(([c,e])=>{e.forEach(d=>{b.set(d,c)})});return b}setBackground(){const b=this.getBackgroundByPath(this.currentPath);this.currentBg!==b&&(b?(this.updateBackground(b),this.currentBg=b):(this.resetBackground(),this.currentBg=null))}getBackgroundByPath(b){b=this.getCategoryByPath(b);return this.screensMap.get(b)??this.screensMap.get("all")??null}getCategoryByPath(b){b=this.formatPath(b);return this.categoriesMap.get(b)??(this.isInviteCode(b)?
+"login":void 0)}isInviteCode(b){return/^[0-9a-f]{10}$/.test(b)}formatPath(b){if(b)return b.slice(1);b=location.pathname.slice(location.pathname.lastIndexOf("/"));return b.slice(3===b.length?3:1)}updateState({...b}){Object.assign(this.state,{...b})}resetState(){this.state=Object.assign({},GPBackground_.DEFAULT_STATE)}updatePreview(b){this.enable();this.updateState(b);this.updateBackground(this.state,!0);this.currentBg=void 0}async updateBackground(b,c=!1){if(this.settings.enabled){var e=b.blob&&b.hash===
+this.currentBg?.hash;b.type===this.currentBg?.type&&e||this.resetBackground();document.body.classList.toggle("gp-bg-preview_",c);switch(b.type){case GPBackground_.TYPE.COLOR:document.documentElement.style.setProperty("--gp-background-color",`${b.color}`);break;case GPBackground_.TYPE.IMAGE:document.documentElement.style.setProperty("--gp-background-color",b.color);e||(c=isFirefox?await Utils.blobToBase64(b.blob):URL.createObjectURL(b.blob),document.documentElement.style.setProperty("--gp-background-image",
+`url(${c})`),this.lastObjectURL=c);this.updateImageStretch(b.stretch);break;case GPBackground_.TYPE.VIDEO:document.documentElement.style.setProperty("--gp-background-color",b.color),e||(c=URL.createObjectURL(b.blob),this.lastObjectURL=this.video.src=c),this.updateVideoStretch(b.stretch)}document.body.classList.toggle("gp-hide-border_",!b.border);this.settings.enabled&&document.body.classList.add("gp-bg-custom_")}}resetBackground(){this.lastObjectURL&&URL.revokeObjectURL(this.lastObjectURL);document.body.classList.remove("gp-hide-border_");
+document.documentElement.style.setProperty("--gp-background-color","none");document.documentElement.style.setProperty("--gp-background-image","none");this.video.src="";document.body.classList.remove("gp-bg-custom_","gp-bg-preview_")}async addBackground(b){b.blob&&(b.hash=await Utils.getBlobHash(b.blob));"all"===b.screens[0]&&(this.backgrounds.length=0);this.backgrounds.push(b);this.updateBackgrounds()}updateBackgrounds(){this.backgrounds=this.getFilteredBackgrounds(this.backgrounds);this.db.set(this.backgrounds).then(()=>
+{this.updateCurrentBackgrounds()})}getFilteredBackgrounds(b){this.screensMap.clear();for(let c=0;c<b.length;c++)b[c].screens.forEach(e=>{this.screensMap.set(e,b[c])});return b.filter(c=>{c.screens=c.screens.filter(e=>this.screensMap.get(e)===c);return!!c.screens.length})}updateSettings({...b}){Object.assign(this.settings,{...b});localStorage.setItem(GPBackground_.SETTINGS_STORAGE,JSON.stringify(this.settings))}updateImageStretch(b){document.documentElement.style.setProperty("--gp-background-size",
+GPBackground_.STRETCH_STYLES[b])}updateVideoStretch(b){let c,e;switch(b){case GPBackground_.BG_STRETCH.FULLSIZE:e=c="unset";break;case GPBackground_.BG_STRETCH.STRETCH:const {clientWidth:d,clientHeight:a}=document.documentElement;a/d>this.video.videoHeight/this.video.videoWidth?(c="unset",e="100%"):(c="100%",e="unset");break;case GPBackground_.BG_STRETCH.CONTAIN:e=c="100%"}document.documentElement.style.setProperty("--gp-background-video-width",c);document.documentElement.style.setProperty("--gp-background-video-height",
+e)}saveBackground({type:b,blob:c}){return new Promise((e,d)=>{const a=this.db.transaction(["backgrounds"],"readwrite"),f={id:0,type:b,blob:c};a.objectStore("backgrounds").put(f);a.addEventListener("complete",e);a.addEventListener("error",d)})}async loadFileHandler(b){const c=GPBackground_.VIDEO_FILE_TYPES.includes(b.type)?GPBackground_.TYPE.VIDEO:GPBackground_.TYPE.IMAGE,[e,d]=await Promise.all([Utils.getBlobHash(b),Utils.getAverageColor(b,c)]);this.updatePreview({type:c,blob:b,hash:e,color:d})}loadImageFromURL(b){return new Promise((c,
+e)=>{GM_xmlhttpRequest({url:b,method:"GET",responseType:"blob",onload:d=>c(d.response),ontimeout:e,onerror:e})})}updateCurrentBackgrounds(){this.currentBackgroundsBlock.classList.toggle("empty_",!this.backgrounds.length);this.currentBackgrounds.innerHTML="";if(this.backgrounds.length){var b=document.createDocumentFragment();for(let d=this.backgrounds.length-1;0<=d;d--){var c=this.backgrounds[d];const a=document.createElement("div");a.className="bg_";var e=document.createElement("div");e.className=
+"type_";e.textContent=this.typeLabels[c.type];e.title=L.EDIT_BACKGROUND_TTL;e.dataset.index=d;a.appendChild(e);e=document.createElement("input");e.className="color_ gp-ui-color_";e.type="color";e.value=c.color;e.title=L.EDIT_AVERAGE_COLOR_TTL;e.dataset.index=d;e.oncontextmenu=g=>{g.preventDefault()};a.appendChild(e);const f=document.createElement("div");f.className="bg-screens_";a.appendChild(f);c.screens.forEach(g=>{const h=document.createElement("div");h.className="screen_";h.textContent=this.screenLabels[g];
+f.appendChild(h)});c=document.createElement("div");c.className="delete-btn_";c.textContent="\u2716";c.title=L.DELETE_BACKGROUND_TTL;c.dataset.index=d;a.appendChild(c);b.appendChild(a)}this.currentBackgrounds.appendChild(b)}}handleNavigate(b){b=b.destination.url;b=b.slice(b.lastIndexOf("/")).split("?")[0];this.handleURLChange(3===b.length?"/":b)}handleURLChange(b){this.currentPath=b;this.isFrameShown&&this.updateCurrentScreen();this.settings.enabled&&this.backgrounds?.length&&this.setBackground()}buildTypeLabels(){const b=
+L.BACKGROUND_TYPES.split("|");return Object.values(GPBackground_.TYPE).reduce((c,e,d)=>{c[e]=b[d];return c},{})}buildScreenLabels(){const b=L.SCREEN_CATEGORIES.split("|");return[...Object.keys(GPBackground_.SCREEN_CATEGORIES),"all"].reduce((c,e,d)=>{c[e]=b[d];return c},{})}updateCurrentScreen(){const b=this.getCategoryByPath(this.currentPath);this.screenList.querySelector(".current_")?.classList.remove("current_");this.screenList.querySelector(`[name="${b}"]+.screen_`)?.classList.add("current_")}}
+class Utils{static getBlobHash(b){return new Promise(c=>{const e=new FileReader;e.readAsArrayBuffer(b);e.onloadend=async()=>{var d=await crypto.subtle.digest("SHA-256",e.result);d=(new DataView(d)).getInt32(1);c(d)}})}static getAverageColor(b,c){return new Promise(e=>{const d=URL.createObjectURL(b);if(c===GPBackground_.TYPE.VIDEO){const a=document.createElement("video");a.src=d;a.onloadeddata=()=>{a.currentTime=0};a.onseeked=()=>{e(this.getFrameColor(a,d))}}else{const a=document.createElement("img");
+a.src=d;a.onload=()=>{e(this.getFrameColor(a,d))}}})}static getFrameColor(b,c){URL.revokeObjectURL(c);c=document.createElement("canvas").getContext("2d");c.imageSmoothingEnabled=!0;c.drawImage(b,0,0,1,1);const [e,d,a]=c.getImageData(0,0,1,1).data.slice(0,3);return this.rgbToHex(e,d,a)}static rgbToHex(b,c,e){return"#"+(16777216+(b<<16)+(c<<8)+e).toString(16).slice(1)}static blobToBase64(b){return new Promise(c=>{const e=new FileReader;e.addEventListener("load",d=>{c(d.target.result)});e.readAsDataURL(b)})}}
+new GPBackground_;
+console.log("gpmod: background changer (unlocked)");
+}).call(this);
